@@ -1,4 +1,5 @@
 var utils = require('./utils');
+var searchTopic = require('./search_topic').searchTopic;
 var args = utils.argsParse();
 
 var sinaSSOEncoder = require('./sinassobase').sinaSSOEncoder;
@@ -6,6 +7,14 @@ var input_authcode = function() {
   var consoleRead = utils.consoleRead;
   return consoleRead("请输入位于程序运行目录下的图片*pin.png*的验证码:");
 }
+var login_error = function(errmsg){
+  if(errmsg)
+    console.log(errmsg);  
+  else
+    console.log('login failed!', '检查用户名和密码，重新尝试登录!');
+  phantom.exit();
+}
+
 console.log('ready to login into sina...');
 var page = require('webpage').create();
 page.settings.userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.107 Safari/537.36";
@@ -15,6 +24,7 @@ page.customHeaders = {
 var user = args.username;
 var password = args.password;
 user = sinaSSOEncoder.getSuByUsername(user);
+var topic = args.topic || '主要看气质';
 
 var preloginurl = "http://login.sina.com.cn/sso/prelogin.php?entry=weibo&callback=sinaSSOController.preloginCallBack&su=" + user +
   "&rsakt=mod&checkpin=1&client=ssologin.js(v1.4.18)&_=" + (new Date).getTime();
@@ -81,20 +91,16 @@ page.open(preloginurl, function(status) {
           postdata = utils.httpBuildQuery(postdata);
           page.open(loginurl, 'post', postdata, function(status) {
             if (status == 'success') {
-              utils.stdout('Sign up...');
-              var waiting = setInterval(function(){
-                utils.stdout('.');
-              },100);
+              var waiting = utils.progressbar.start('Sign up.');
               //try to delay 5s for waiting the response from sina SSO authentication
               setTimeout(function(){
-                clearInterval(waiting);
+                utils.progressbar.stop(waiting);
                 if (page.cookies.some(function(ele,index){return ele.name === "SSOLoginState"})){
-                  console.log("\nlogin successfully!");
+                  console.log("login successfully!");
                   //开始搜索数据
-                  
+                  searchTopic(page, topic);
                 }else{
-                  console.log('login failed!', '原因不明，请重新尝试登录!');
-                  phantom.exit();
+                  login_error();
                 }
               },5000);
             }else{
@@ -105,8 +111,10 @@ page.open(preloginurl, function(status) {
                 var ret = [];
                 a.forEach(function(ele,index){utils.urldecode(ele.replace('")',""),'gb2312',function(str){ret.push(str.split('=')[1]);})}); 
                 //解码的方法实际上更新了DOM，并通过回调函数设置返回值，这里读取返回值变量时，使用setTimeout(...,0)
-                setTimeout(function(){console.log('login failed!', 'errcode:', ret[0], 'errmsg:', ret[1])},0);
-                phantom.exit();
+                setTimeout(function(){login_error(['login failed!', 'errcode:', ret[0], 'errmsg:', ret[1]].join(" "))},0);
+                setTimeout(function(){if(ret.every(function(ele){return ele === undefined})){
+                  login_error();
+                }},100);
               }
             }
           });
@@ -115,3 +123,4 @@ page.open(preloginurl, function(status) {
     }
   }
 });
+

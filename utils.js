@@ -1,3 +1,4 @@
+var sys = require('system');
 var _console = console;
 function log(obj) {
   if (obj) {
@@ -45,8 +46,7 @@ function consoleRead(interactive_str) {
 }
 
 function stdout(s){
-  var system = require('system');
-  system.stdout.write(s);
+  sys.stdout.write(s);
 }
 
 /*
@@ -82,7 +82,8 @@ String.prototype.startsWith = function(s){return this.indexOf(s) === 0};
 function argsParse(){
   var sys = require('system');
   var args = sys.args;
-  var help_str = "command: phantomjs Crawler_weibo.js --username your_weibo_id --password your_weibo_password\n";
+  var help_str = 
+  "command: phantomjs Crawler_weibo.js --username your_weibo_id --password your_weibo_password\noptional args: --topic topic_keyword, default value is '?????'\n";
   var arg_names = ['--username','--password'];
   var _args_parse_error = function(){
     console.log('输入的参数格式不正确\n',help_str);
@@ -97,6 +98,11 @@ function argsParse(){
       _current_arg = current_arg.replace("--","");
       args_parsed[_current_arg] = args.shift();
       arg_names.splice(i,1);
+    }else{
+      if(current_arg.startsWith("--")){
+        _current_arg = current_arg.replace("--","");
+        args_parsed[_current_arg] = args.shift();
+      }
     }
   }
   if(arg_names.length === 0 ){
@@ -107,6 +113,51 @@ function argsParse(){
   }
 }
 
+/*
+  method used to generate the request url for loading the search page
+ */
+function getSearchTopicUrl(topic, pagenum){
+  var baseurl = ['http://s.weibo.com/weibo/','','&Refer=STopic_box'];//%2523%25E4%25B8%25BB%25E8%25A6%2581%25E7%259C%258B%25E6%25B0%2594%25E8%25B4%25A8%2523
+  if(pagenum)
+    baseurl[2] = '&page=' + pagenum;
+  var signcode = '%2523';//hex of char '#'(23) with the prefix %25(encodeURI('%'))
+  var topic_encoded = [signcode, encodeURI(encodeURI(topic)), signcode].join("");
+  baseurl[1] = topic_encoded;
+  var url = baseurl.join("");
+  return url;
+}
+
+var progressers = [];
+/*
+  helper for output chars ... as progressbar
+ */
+function startProgressBar(begin_str, interval) {
+  begin_str = begin_str || 'Loading...';
+  stdout(begin_str);
+  interval = interval || 250;
+  var progresser = setInterval(function(){
+    stdout('.');
+  }, interval);
+  progressers.push(progresser);
+  return progresser;
+}
+
+function stopProgressBar(progresser_id){
+  if(progresser_id){
+    clearInterval(progresser_id);
+    stdout('\n');
+    var index = progressers.indexOf(progresser_id);
+    if(index){
+      progressers.splice(index, 1);
+    }
+  }
+  else{
+    progressers.forEach(function(ele,index){
+      stopProgressBar(ele);
+    });
+  }
+}
+
 exports.log = log;
 exports.httpBuildQuery = httpBuildQuery;
 exports.consoleRead = consoleRead;
@@ -114,5 +165,7 @@ exports.getPinCodeUrl = getPinCodeUrl;
 exports.urldecode = urldecode;
 exports.argsParse = argsParse;
 exports.stdout = stdout;
+exports.getSearchTopicUrl = getSearchTopicUrl;
+exports.progressbar = {'start':startProgressBar, 'stop':stopProgressBar};
 
 
