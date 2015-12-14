@@ -6,7 +6,7 @@ var search_tasks = [];
 var next_page_request = function(pagenum) {
   console.log(pagenum);
 }
-var searchTopic = function(page, topic, pagenum) {
+var searchTopic = function(page, topic, pagenum, interval) {
   var url = utils.getSearchTopicUrl(topic, pagenum);
   var waiting_search_page = progressbar.start('Loading page:' + (pagenum || 1));
   page.open(url, function(status) {
@@ -82,11 +82,11 @@ var searchTopic = function(page, topic, pagenum) {
           search_tasks.shift();
           var next_page = results[1];
           //15秒后再进行下一页的请求, 避免请求过频
-          progressbar.start('request next page after 30 seconds...');
+          progressbar.start('request next page after ' + interval +' seconds...');
           task_id = setTimeout(function() {
             progressbar.stop();
             searchTopic(page, topic, next_page)
-          }, 30 * 1000);
+          }, interval * 1000);
           var task = {};
           task[next_page] = task_id;
           search_tasks.push(task);

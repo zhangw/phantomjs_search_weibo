@@ -83,7 +83,7 @@ function argsParse(){
   var sys = require('system');
   var args = sys.args;
   var help_str = 
-  "command: phantomjs Crawler_weibo.js --username your_weibo_id --password your_weibo_password\noptional args: --topic topic_keyword, default value is '?????'\n";
+  "command: phantomjs Crawler_weibo.js --username your_weibo_id --password your_weibo_password\noptional args: --topic topic_keyword, default value is '?????'\n --delay 10, interval between two requests(unit sec), default value is 15";
   var arg_names = ['--username','--password'];
   var _args_parse_error = function(){
     console.log('输入的参数格式不正确\n',help_str);

@@ -25,6 +25,7 @@ var user = args.username;
 var password = args.password;
 user = sinaSSOEncoder.getSuByUsername(user);
 var topic = args.topic || '主要看气质';
+var interval = parseInt(args.delay) || 15;
 
 var preloginurl = "http://login.sina.com.cn/sso/prelogin.php?entry=weibo&callback=sinaSSOController.preloginCallBack&su=" + user +
   "&rsakt=mod&checkpin=1&client=ssologin.js(v1.4.18)&_=" + (new Date).getTime();
@@ -98,7 +99,7 @@ page.open(preloginurl, function(status) {
                 if (page.cookies.some(function(ele,index){return ele.name === "SSOLoginState"})){
                   console.log("login successfully!");
                   //开始搜索数据
-                  searchTopic(page, topic);
+                  searchTopic(page, topic, undefined, interval);
                 }else{
                   login_error();
                 }
