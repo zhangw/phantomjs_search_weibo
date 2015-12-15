@@ -98,7 +98,7 @@ page.open(preloginurl, function(status) {
                 if (page.cookies.some(function(ele,index){return ele.name === "SSOLoginState"})){
                   console.log("login successfully!");
                   //开始搜索数据
-                  searchTopic(page, args.topic, undefined, args.interval);
+                  searchTopic(page, args.topic, undefined);
                 }else{
                   login_error();
                 }
