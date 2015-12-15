@@ -3,9 +3,8 @@ var utils = require('./utils');
 var log = utils.log;
 var progressbar = utils.progressbar;
 var search_tasks = [];
-var next_page_request = function(pagenum) {
-  console.log(pagenum);
-}
+var save_topic = require('./save_topic_to_files').save_topic_to_file;
+
 var searchTopic = function(page, topic, pagenum, interval) {
   var url = utils.getSearchTopicUrl(topic, pagenum);
   var waiting_search_page = progressbar.start('Loading page:' + (pagenum || 1));
@@ -78,7 +77,9 @@ var searchTopic = function(page, topic, pagenum, interval) {
         });
         progressbar.stop(waiting_search_page);
         if (typeof results !== "string" && results[1]) {
-          log(results[0]);
+          var user_with_pics = results[0];
+          log(user_with_pics);
+          save_topic.save(user_with_pics);
           search_tasks.shift();
           var next_page = results[1];
           //15秒后再进行下一页的请求, 避免请求过频
@@ -91,8 +92,15 @@ var searchTopic = function(page, topic, pagenum, interval) {
           task[next_page] = task_id;
           search_tasks.push(task);
         } else {
-          typeof results === "string" ? log(results) : log(results[0]) && console.log('No more pages to search, last page number is:', pagenum || 1);
-          phantom.exit();
+          if(typeof results === "string")
+            log(results)
+          else{
+            var user_with_pics = results[0];
+            save_topic.save.call(save_topic, user_with_pics);
+            log(user_with_pics);
+            console.log('No more pages to search, last page number is:', pagenum || 1);
+          }
+          //phantom.exit();
         }
       }else{
         //TODO:处理不能使用jquery.min.js解析数据的异常

@@ -5,7 +5,7 @@ var args = utils.argsParse();
 var sinaSSOEncoder = require('./sinassobase').sinaSSOEncoder;
 var input_authcode = function() {
   var consoleRead = utils.consoleRead;
-  return consoleRead("请输入位于程序运行目录下的图片*pin.png*的验证码:");
+  return consoleRead("请输入pin.png的验证码:");
 }
 var login_error = function(errmsg){
   if(errmsg)
@@ -18,14 +18,13 @@ var login_error = function(errmsg){
 console.log('ready to login into sina...');
 var page = require('webpage').create();
 page.settings.userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.107 Safari/537.36";
+page.settings.loadImages = false; //don't load the inlined images to improve the performance
 page.customHeaders = {
   "Connection:": "keep-alive"
 };
 var user = args.username;
 var password = args.password;
 user = sinaSSOEncoder.getSuByUsername(user);
-var topic = args.topic || '主要看气质';
-var interval = parseInt(args.delay) || 15;
 
 var preloginurl = "http://login.sina.com.cn/sso/prelogin.php?entry=weibo&callback=sinaSSOController.preloginCallBack&su=" + user +
   "&rsakt=mod&checkpin=1&client=ssologin.js(v1.4.18)&_=" + (new Date).getTime();
@@ -99,7 +98,7 @@ page.open(preloginurl, function(status) {
                 if (page.cookies.some(function(ele,index){return ele.name === "SSOLoginState"})){
                   console.log("login successfully!");
                   //开始搜索数据
-                  searchTopic(page, topic, undefined, interval);
+                  searchTopic(page, args.topic, undefined, args.interval);
                 }else{
                   login_error();
                 }
