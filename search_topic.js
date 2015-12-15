@@ -5,7 +5,7 @@ var progressbar = utils.progressbar;
 var search_tasks = [];
 var save_topic = require('./save_topic_to_files').save_topic_to_file;
 
-var searchTopic = function(page, topic, pagenum, interval) {
+var searchTopic = function(page, topic, pagenum) {
   var url = utils.getSearchTopicUrl(topic, pagenum);
   var waiting_search_page = progressbar.start('Loading page:' + (pagenum || 1));
   page.open(url, function(status) {
@@ -23,10 +23,15 @@ var searchTopic = function(page, topic, pagenum, interval) {
       //NOTE：这里使用injectJs加载本地的js，使用includeJs不仅需要额外的网络请求，而且必须使用回调函数，而在回调函数中调用setTimeout进行下一次请求会导致一个严重的BUG！
       if (page.injectJs('jquery.min.js')) {
         var results = page.evaluate(function() {
+          //万一被发现是机器人了，那就先gg吧
+          var tit = STK.selector('p[class="code_tit"]');
+          if(tit && tit.length){
+            return false;
+          }
           //判断话题搜索结果
-          var noresult = $('p[class="noresult_tit"]').text().trim();
-          if (noresult) {
-            return noresult;
+          var noresult = STK.selector('p[class="noresult_tit"]');
+          if (noresult && noresult.length) {
+            return noresult[0].innerText;
           }
           var user_with_pics = [];
           //微博数据列表的容器
@@ -64,44 +69,35 @@ var searchTopic = function(page, topic, pagenum, interval) {
               'pics': pics
             })
           }
-          //var current_page = $("div[class='W_pages'] a[action-type='feed_list_page_more']").text();
-          //var prev_page = $("div[class='W_pages'] a[class^='page prev']");
-          var next_page = $("div[class='W_pages'] a[class^='page next']");
-          if (next_page.length) {
-            //是否有下一页
-            next_page = next_page.attr('href').split('&page=')[1];
-          } else {
-            next_page = false;
-          }
-          return [user_with_pics, next_page]
+          return user_with_pics
         });
         progressbar.stop(waiting_search_page);
-        if (typeof results !== "string" && results[1]) {
-          var user_with_pics = results[0];
-          log(user_with_pics);
-          save_topic.save(user_with_pics);
-          search_tasks.shift();
-          var next_page = results[1];
-          //15秒后再进行下一页的请求, 避免请求过频
-          progressbar.start('request next page after ' + interval +' seconds...');
-          task_id = setTimeout(function() {
-            progressbar.stop();
-            searchTopic(page, topic, next_page)
-          }, interval * 1000);
-          var task = {};
-          task[next_page] = task_id;
-          search_tasks.push(task);
-        } else {
-          if(typeof results === "string")
-            log(results)
-          else{
-            var user_with_pics = results[0];
-            save_topic.save.call(save_topic, user_with_pics);
-            log(user_with_pics);
-            console.log('No more pages to search, last page number is:', pagenum || 1);
-          }
-          //phantom.exit();
+        if(results === false){
+          console.log('都说你是机器人了，你还好意思继续搜？');
+          phantomjs.exit();
         }
+        var next_page;
+        if (Array.isArray(results) && results.length) {
+          var user_with_pics = results;
+          log(user_with_pics);
+          search_tasks.shift();
+          save_topic.save.call(save_topic, user_with_pics);
+          next_page = pagenum === undefined ? 2 : pagenum + 1;
+        }else if(typeof results === 'string'){
+           log(results);
+           console.log('No more pages to search, last page number is:', pagenum || 1, ' url:', url);
+           //console.log(page.content);
+           console.log('Now it will restart to search from page 1');
+        }
+        //15秒后再进行下一页的请求, 避免请求过频
+        progressbar.start('request next page after ' + args.interval + ' seconds...');
+        task_id = setTimeout(function() {
+          progressbar.stop();
+          searchTopic(page, topic, next_page)
+        }, args.interval * 1000);
+        var task = {};
+        task[next_page] = task_id;
+        search_tasks.push(task);
       }else{
         //TODO:处理不能使用jquery.min.js解析数据的异常
       }
