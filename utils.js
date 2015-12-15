@@ -79,39 +79,58 @@ String.prototype.startsWith = function(s){return this.indexOf(s) === 0};
 /*
   helper for handling program arguments
  */
+var args_parsed = undefined;
 function argsParse(){
-  var sys = require('system');
-  var args = sys.args;
-  var help_str = 
-  "command: phantomjs Crawler_weibo.js --username your_weibo_id --password your_weibo_password\noptional args: --topic topic_keyword, default value is '?????'\n --delay 10, interval between two requests(unit sec), default value is 15";
-  var arg_names = ['--username','--password'];
-  var _args_parse_error = function(){
-    console.log('输入的参数格式不正确\n',help_str);
-    phantom.exit();
-  }
-  if(args.length ===1 || args.length <= arg_names.length){
-    _args_parse_error();
-  }
-  var current_arg, args_parsed = {};
-  while((current_arg = args.shift()) !== undefined){
-    if((i = arg_names.indexOf(current_arg)) > -1){
-      _current_arg = current_arg.replace("--","");
-      args_parsed[_current_arg] = args.shift();
-      arg_names.splice(i,1);
-    }else{
-      if(current_arg.startsWith("--")){
-        _current_arg = current_arg.replace("--","");
+  if (args_parsed === undefined) {
+    var sys = require('system');
+    var args = sys.args;
+    var help_str = ["command: phantomjs Crawler_weibo.js --username your_weibo_id --password your_weibo_password"
+    ,"optional args:"
+    ,"--topic topic_keyword, default value is '主要看气质'"
+    ,"--interval 10, interval between two requests(unit sec), default value is 15"
+    ,"--output directory_to_save_files, defalut path is ./output"
+    ].join("\n");
+    var arg_names = ['--username', '--password'];
+    var _args_parse_error = function() {
+      console.log('输入的参数格式不正确\n', help_str);
+      phantom.exit();
+    }
+    if (args.length === 1 || args.length <= arg_names.length) {
+      _args_parse_error();
+    }
+    var current_arg;
+    args_parsed = {};
+    while ((current_arg = args.shift()) !== undefined) {
+      if ((i = arg_names.indexOf(current_arg)) > -1) {
+        _current_arg = current_arg.replace("--", "");
         args_parsed[_current_arg] = args.shift();
+        arg_names.splice(i, 1);
+      } else {
+        if (current_arg.startsWith("--")) {
+          _current_arg = current_arg.replace("--", "");
+          args_parsed[_current_arg] = args.shift();
+        }
       }
     }
-  }
-  if(arg_names.length === 0 ){
-    log(args_parsed);
-    return args_parsed;
+    if (arg_names.length === 0) {
+      //log(args_parsed);
+      setArgsDefaultValue(args_parsed);
+      return args_parsed;
+    } else {
+      _args_parse_error();
+    }
   }else{
-    _args_parse_error();
+    return args_parsed;
   }
 }
+
+function setArgsDefaultValue(args){
+  args.topic = args.topic || '主要看气质';
+  args.interval = parseInt(args.interval) || 15;
+  args.output = args.output || './output';
+  log(args);
+}
+
 
 /*
   method used to generate the request url for loading the search page
