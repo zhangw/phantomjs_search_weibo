@@ -88,7 +88,7 @@ function argsParse(){
     ,"optional args:"
     ,"--topic topic_keyword, default value is '主要看气质'"
     ,"--interval 10, interval between two requests(unit sec), default value is 15"
-    ,"--output directory_to_save_files, defalut path is ./output"
+    ,"--server the real server address used to process the weibo data posted by phantomjs, default is local server http://127.0.0.1:3000/weibos"
     ].join("\n");
     var arg_names = ['--username', '--password'];
     var _args_parse_error = function() {
@@ -127,7 +127,8 @@ function argsParse(){
 function setArgsDefaultValue(args){
   args.topic = args.topic || '主要看气质';
   args.interval = parseInt(args.interval) || 15;
-  args.output = args.output || './output';
+  //args.output = args.output || './output';
+  args.server = args.server || 'http://127.0.0.1:3000/weibos';
   log(args);
 }
 
