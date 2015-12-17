@@ -2,6 +2,9 @@ var fs = require('fs');
 var webpage = require('webpage');
 var args = require('./utils').argsParse();
 
+/*
+  这种保存微博搜索信息的方法只适合演示对fs模块的使用，已经废弃！
+ */
 function saveTopicToFile(){
   var working_directory = args.output;
   if(fs.isAbsolute(working_directory)){
@@ -35,6 +38,7 @@ function save(result, topic) {
       "Connection": "keep-alive"
     };
     page.settings.resourceTimeout = 5000;
+    page.viewportSize = { width: 1440, height: 900 };
     var index = 1;
     result.forEach(function(ret) {
       var user_directory = ret.user_nick_name;
@@ -52,6 +56,7 @@ function save(result, topic) {
               var pic_fullname = fs.absolute([working_directory, topic, user_directory, pic_id].join(fs.separator));
               try {
                 //console.debug(pic_fullname);
+                //TODO:用这样的方式保存图片，图片的大小尺寸会有问题，并不推荐这种实现
                 page.render(pic_fullname, {
                   format: pic_type
                 });
