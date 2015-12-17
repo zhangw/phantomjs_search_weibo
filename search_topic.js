@@ -3,7 +3,7 @@ var utils = require('./utils');
 var log = utils.log;
 var progressbar = utils.progressbar;
 var search_tasks = [];
-var save_topic = require('./save_topic_to_files').save_topic_to_file;
+var postWeiboData = require('./post_weibo_data').postWeiboData;
 
 var searchTopic = function(page, topic, pagenum) {
   var url = utils.getSearchTopicUrl(topic, pagenum);
@@ -22,7 +22,7 @@ var searchTopic = function(page, topic, pagenum) {
     } else {
       //NOTE：这里使用injectJs加载本地的js，使用includeJs不仅需要额外的网络请求，而且必须使用回调函数，而在回调函数中调用setTimeout进行下一次请求会导致一个严重的BUG！
       if (page.injectJs('jquery.min.js')) {
-        var results = page.evaluate(function() {
+        var results = page.evaluate(function(topic) {
           //万一被发现是机器人了，那就先gg吧
           var tit = STK.selector('p[class="code_tit"]');
           if(tit && tit.length){
@@ -38,6 +38,8 @@ var searchTopic = function(page, topic, pagenum) {
           var wrapper = STK.selector("div[action-type='feed_list_item']");
           for (var i = 0; i < wrapper.length; i++) {
             var container = wrapper[i];
+            var mid = container.getAttribute('mid');//weibo id
+            var timestamp = container.querySelector("a[node-type='feed_list_item_date']").getAttribute('date');//weibo post date
             //getUser
             var user = container.querySelector("a[nick-name]");
             //<a class="W_texta W_fb" nick-name="啊什么你说什么我听不清楚" href="http://weibo.com/rockerhe" target="_blank" title="啊什么你说什么我听不清楚"
@@ -65,12 +67,15 @@ var searchTopic = function(page, topic, pagenum) {
               pics = [];
             }
             user_with_pics.push({
+              'mid': mid,
+              'timestamp': timestamp,
               'user_nick_name': user_nick_name,
-              'pics': pics
+              'pics': pics,
+              'topic': topic
             })
           }
           return user_with_pics
-        });
+        }, topic);
         progressbar.stop(waiting_search_page);
         if(results === false){
           console.log('都说你是机器人了，你还好意思继续搜？');
@@ -81,7 +86,8 @@ var searchTopic = function(page, topic, pagenum) {
           var user_with_pics = results;
           log(user_with_pics);
           search_tasks.shift();
-          save_topic.save.call(save_topic, user_with_pics);
+          //TODO:
+          postWeiboData(user_with_pics);
           next_page = pagenum === undefined ? 2 : pagenum + 1;
         }else if(typeof results === 'string'){
            log(results);
