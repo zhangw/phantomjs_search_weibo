@@ -6,9 +6,9 @@ with optional args:
 ```
 --topic 恒大VS巴萨 
 --interval 5 
---output ./output/search_results
+--server {hostname}:{port}/weibos
+--size large
 ```
 
-
 TODO:
- - []搜索时，时常不能返回数据结果，是网络请求的问题还是？
+ - [x]搜索时，时常不能返回数据结果，通过重新请求来修复。
