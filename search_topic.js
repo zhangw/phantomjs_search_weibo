@@ -1,6 +1,7 @@
 require('./Polyfill');
 var utils = require('./utils');
 var log = utils.log;
+var args = utils.argsParse();
 var progressbar = utils.progressbar;
 var search_tasks = [];
 var postWeiboData = require('./post_weibo_data').postWeiboData;
@@ -22,7 +23,7 @@ var searchTopic = function(page, topic, pagenum) {
     } else {
       //NOTE：这里使用injectJs加载本地的js，使用includeJs不仅需要额外的网络请求，而且必须使用回调函数，而在回调函数中调用setTimeout进行下一次请求会导致一个严重的BUG！
       if (page.injectJs('jquery.min.js')) {
-        var results = page.evaluate(function(topic) {
+        var results = page.evaluate(function(topic, size) {
           //万一被发现是机器人了，那就先gg吧
           var tit = STK.selector('p[class="code_tit"]');
           if(tit && tit.length){
@@ -50,7 +51,7 @@ var searchTopic = function(page, topic, pagenum) {
             //action-data="uid=2411766022&mid=3918147427640298" action-type="feed_list_media_img"
             //src="http://ww3.sinaimg.cn/thumbnail/8fc0a106jw1eyte4gcghyj20e80e83zb.jpg"></img>
             if (pics && pics.src)
-              pics = [pics.src.replace("thumbnail", "mw1024").replace("square", "mw1024")]
+              pics = [pics.src.replace("thumbnail", size).replace("square", size)]
             else if (!pics) {
               //多图的获取
               //pics = container.querySelectorAll("img[action-type='fl_pics']");
@@ -58,7 +59,7 @@ var searchTopic = function(page, topic, pagenum) {
               if (pics.length) {
                 pics = pics.toArray();
                 pics = pics.map(function(ele, index) {
-                  return ele.src.replace("square", "mw1024")
+                  return ele.src.replace("square", size)
                 })
               } else {
                 pics = [];
@@ -75,7 +76,7 @@ var searchTopic = function(page, topic, pagenum) {
             })
           }
           return user_with_pics
-        }, topic);
+        }, topic, args.size);
         progressbar.stop(waiting_search_page);
         if(results === false){
           console.log('都说你是机器人了，你还好意思继续搜？');

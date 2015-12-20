@@ -89,6 +89,7 @@ function argsParse(){
     ,"--topic topic_keyword, default value is '主要看气质'"
     ,"--interval 10, interval between two requests(unit sec), default value is 15"
     ,"--server the real server address used to process the weibo data posted by phantomjs, default is local server http://127.0.0.1:3000/weibos"
+    ,"--size large, the image size type mw1024 less than large which is the original size , default is mw1024"
     ].join("\n");
     var arg_names = ['--username', '--password'];
     var _args_parse_error = function() {
@@ -129,6 +130,7 @@ function setArgsDefaultValue(args){
   args.interval = parseInt(args.interval) || 15;
   //args.output = args.output || './output';
   args.server = args.server || 'http://127.0.0.1:3000/weibos';
+  args.size = args.size || 'mw1024';
   log(args);
 }
 
